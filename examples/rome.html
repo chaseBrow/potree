@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<title>Potree viewer</title>
+
+	<link rel="stylesheet" type="text/css" href="../build/potree/potree.css">
+	<link rel="stylesheet" type="text/css" href="../libs/jquery-ui/jquery-ui.min.css">
+	<link rel="stylesheet" type="text/css" href="../libs/openlayers3/ol.css">
+	<link rel="stylesheet" type="text/css" href="../libs/spectrum/spectrum.css">
+	<link rel="stylesheet" type="text/css" href="../libs/jstree/themes/mixed/style.css">
+	<link rel="stylesheet" type="text/css" href="../libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css">
+</head>
+
+<body>
+	<script src="../libs/jquery/jquery-3.1.1.min.js"></script>
+	<script src="../libs/spectrum/spectrum.js"></script>
+	<script src="../libs/jquery-ui/jquery-ui.min.js"></script>
+
+
+	<script src="../libs/other/BinaryHeap.js"></script>
+	<script src="../libs/tween/tween.min.js"></script>
+	<script src="../libs/d3/d3.js"></script>
+	<script src="../libs/proj4/proj4.js"></script>
+	<script src="../libs/openlayers3/ol.js"></script>
+	<script src="../libs/i18next/i18next.js"></script>
+	<script src="../libs/jstree/jstree.js"></script>
+	<script src="../build/potree/potree.js"></script>
+	<script src="../libs/plasio/js/laslaz.js"></script>
+	<script src="../libs/Cesium/Cesium.js"></script>
+
+	<!-- INCLUDE ADDITIONAL DEPENDENCIES HERE -->
+	<!-- INCLUDE SETTINGS HERE -->
+
+	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
+		<div id="potree_render_area" style="background-image: url('../build/potree/resources/images/background.jpg');">
+			<div id="cesiumContainer" style="position: absolute; width: 100%; height: 100%; background-color:green">
+			</div>
+		</div>
+		<div id="potree_sidebar_container"> </div>
+	</div>
+
+	<script type="module">
+
+		import * as THREE from "../libs/three.js/build/three.module.js";
+		import { PLYLoader } from "../libs/three.js/loaders/PLYLoader.js";
+		import { OBJLoader } from "../libs/three.js/loaders/OBJLoader.js";
+
+		window.cesiumViewer = new Cesium.Viewer('cesiumContainer', {
+			useDefaultRenderLoop: false,
+			animation: false,
+			baseLayerPicker: false,
+			fullscreenButton: false,
+			geocoder: false,
+			homeButton: false,
+			infoBox: false,
+			sceneModePicker: false,
+			selectionIndicator: false,
+			timeline: false,
+			navigationHelpButton: false,
+			imageryProvider: Cesium.createOpenStreetMapImageryProvider({ url: 'https://a.tile.openstreetmap.org/' }),
+			terrainShadows: Cesium.ShadowMode.DISABLED,
+		});
+
+		// let cp = new Cesium.Cartesian3.fromDegrees(20, 41.89228);
+		// cesiumViewer.camera.setView({
+		// 	destination: cp,
+		// 	orientation: {
+		// 		heading: 10,
+		// 		pitch: -Cesium.Math.PI_OVER_TWO * 0.5,
+		// 		roll: 0.0
+		// 	}
+		// });
+
+		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"), { useDefaultRenderLoop: false });
+
+		const animation = new Potree.CameraAnimation(viewer);
+
+		viewer.setEDLEnabled(true);
+		viewer.setFOV(60);
+		viewer.setPointBudget(1_000_000);
+		viewer.loadSettingsFromURL();
+		viewer.setBackground(null);
+		viewer.setMinNodeSize(0);
+
+		let toggle = true
+
+		viewer.setDescription("Point cloud representation of the Roman Forum.\n  Done: annotations, switch between models, switch between quality, cesium, and help page.\n To Do: custom side bar (half done), animations (walk through the forum), replace data with correct data, and limit cesium scroll");
+
+		viewer.loadGUI(() => {
+			viewer.setLanguage('en');
+			$("#menu_help").next().show();
+			viewer.toggleSidebar();
+
+			let section = $(`
+				<h3 id="menu_help" class="accordion-header ui-widget"><span>Help</span></h3>
+				<div class="accordion-content ui-widget pv-menu-list"></div>
+			`);
+			let content = section.last();
+			content.html(`
+			<img src="../build/potree/resources/images/mouse.png" alt="mouse" width="80%">
+			`);
+			section.first().click(() => content.slideToggle());
+			section.insertBefore($('#menu_about'));
+		});
+
+		// Rome
+		Potree.loadPointCloud("../pointclouds/rome_converted/metadata.json", "rome", e => {
+			viewer.scene.addPointCloud(e.pointcloud);
+
+			// e.pointcloud.position.z = 0;
+			e.pointcloud.rotation.set(0, 0, -0.35 * Math.PI);
+
+			let material = e.pointcloud.material;
+			material.size = 1;
+			material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+
+			viewer.scene.view.position.set(300, 300, 200); //change init camera view
+			viewer.scene.view.lookAt(new THREE.Vector3(100, -300, 0));
+
+			let pointcloudProjection = e.pointcloud.projection;
+			let mapProjection = proj4.defs("WGS84");
+
+			window.toMap = proj4(pointcloudProjection, mapProjection);
+			window.toScene = proj4(mapProjection, pointcloudProjection);
+
+			{
+				let bb = viewer.getBoundingBox();
+
+				let minWGS84 = proj4(pointcloudProjection, mapProjection, bb.min.toArray());
+				let maxWGS84 = proj4(pointcloudProjection, mapProjection, bb.max.toArray());
+			}
+
+
+			//Annotations
+			{ // ANNOTATION & VOLUME
+				let aRoot = viewer.scene.annotations;
+
+				let elTitle = $(`
+				<span name="septimius_anno">
+					Arch of Septimius Severus
+					<img name="action_return_number" src="${Potree.resourcePath}/icons/return_number.svg" class="annotation-action-icon"/>
+					<img name="action_rgb" src="${Potree.resourcePath}/icons/rgb.png" class="annotation-action-icon"/>
+				</span>`);
+
+				elTitle.find("img[name=action_return_number]").click(() => {
+					console.log(viewer.scene.view.position)
+					toggle = !toggle
+					e.pointcloud.visible = toggle
+
+					// event.stopPropagation();
+					// material.activeAttributeName = "return_number";
+					// material.pointSizeType = Potree.PointSizeType.FIXED;
+					// material.size = 5;
+					// viewer.setClipTask(Potree.ClipTask.SHOW_INSIDE);
+				});
+
+				elTitle.find("img[name=action_rgb]").click(() => {
+
+					location.href = Potree.resourcePath + "/models/Arch_Display/index.html";
+
+
+					event.stopPropagation();
+					material.activeAttributeName = "rgba";
+					material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+					material.size = 1;
+					viewer.setClipTask(Potree.ClipTask.HIGHLIGHT);
+				});
+
+				elTitle.toString = () => "Tree Returns";
+
+
+				let aTreeReturns = new Potree.Annotation({
+					title: elTitle,
+					position: [120, -262, 7],
+					cameraPosition: [150, -263, 20],
+					cameraTarget: [120, -262, 7],
+				});
+
+				aTreeReturns.addEventListener("click", (event) => {
+					console.log("clicked")
+					console.log(event)
+
+					console.log("loading model")
+					const loader = new PLYLoader();
+
+					loader.load(Potree.resourcePath + "/models/Arch_Display/aot.ply", (geometry) => {
+						// const textureLoader = new THREE.TextureLoader();
+
+						// const diffuseMap = textureLoader.load(Potree.resourcePath + "/models/Arch_Display/texture.jpg");
+						// diffuseMap.encoding = THREE.sRGBEncoding;
+
+						// const normalMap = textureLoader.load(Potree.resourcePath + "/models/Arch_Display/normal.jpg");
+						// normalMap.encoding = THREE.sRGBEncoding;
+
+						// const cubeloader = new THREE.CubeTextureLoader();
+						// const textureCube = cubeloader.load([Potree.resourcePath + "/models/Arch_Display/posx.jpg", Potree.resourcePath + "/models/Arch_Display/negx.jpg", Potree.resourcePath + "/models/Arch_Display/posy.jpg", Potree.resourcePath + "/models/Arch_Display/negy.jpg", Potree.resourcePath + "/models/Arch_Display/posz.jpg", Potree.resourcePath + "/models/Arch_Display/negz.jpg"]);
+						// textureCube.encoding = THREE.sRGBEncoding;
+
+						geometry.computeVertexNormals();
+
+						let mesh;
+						{
+							// const material = new THREE.MeshStandardMaterial({
+							// 	color: 0xffffff,
+							// 	roughness: 0.5,
+							// 	map: diffuseMap,
+							// 	normalMap: normalMap,
+							// 	normalMapType: THREE.ObjectSpaceNormalMap,
+							// 	envMap: textureCube,
+							// });
+							let material = new THREE.MeshNormalMaterial();
+							mesh = new THREE.Mesh(geometry, material);
+							mesh.position.set(115, -262.3, 0);
+							// mesh1.scale.set(2);
+							mesh.rotation.set(0, 0, -Math.PI / 1.82)
+
+							// mesh.castShadow = true;
+							// mesh.receiveShadow = true;
+
+							viewer.scene.scene.add(mesh);
+						}
+
+						viewer.onGUILoaded(() => {
+							// Add entries to object list in sidebar
+							let tree = $(`#jstree_scene`);
+							let parentNode = "other";
+
+							let meshID = tree.jstree('create_node', parentNode, {
+								"text": "Mesh 1",
+								"icon": `${Potree.resourcePath}/icons/triangle.svg`,
+								"data": geometry
+							},
+								"last", false, false);
+							tree.jstree(mesh.visible ? "check_node" : "uncheck_node", meshID);
+
+						});
+
+						let light = new THREE.SpotLight();
+						light.distance = 15;
+						light.angle = (60 / 180) * Math.PI;
+						light.position.set(150, -263, 20);
+						light.lookAt(new THREE.Vector3(120, -262, 7));
+						viewer.scene.scene.add(light);
+
+						let sph = new Potree.SpotLightHelper(light, new THREE.Color().setHex(0xff0000));
+						viewer.scene.scene.add(sph);
+					});
+
+
+
+				})
+
+				aRoot.add(aTreeReturns);
+				aTreeReturns.domElement.find(".annotation-action-icon:first").css("filter", "invert(1)");
+
+			}
+
+
+			const positions = [
+				[732.857699299931, -314.4424624204238, 2.506800341353859],
+				[669.7327348448034, -327.3404866548961, 10.013910567719662],
+				[
+					649.998517122641,
+					-278.94338581539233,
+					20.130661232240243,
+				],
+				[
+					515.661152338264,
+					-286.6654130209963,
+					12.657860344163382,
+				],
+				[
+					381.323787553887,
+					-294.38744022660023,
+					5.18505945608652,
+				],
+				[
+					320.0049398192514,
+					-294.89746521639347,
+					7.080135950101436,
+				],
+				[
+					280.7397766084795,
+					-335.38897417303724,
+					2.125172162252568,
+				],
+				[
+					231.1407117819204,
+					-377.23505539192945,
+					8.746784231259937,
+				],
+				[
+					203.9911633921755,
+					-339.13882711178184,
+					0.17206736581438342,
+				],
+			];
+
+			const targets = [
+				[
+					707.0285332916048,
+					-342.6877046340905,
+					11.1483299735539,
+				],
+				[
+					733.0180162615447,
+					-286.0076791095361,
+					5.513317161395051,
+				],
+				[
+					707.0203884977327,
+					-254.00093690756094,
+					4.578929991218057,
+				],
+				[
+					334.40168295487666,
+					-290.9707005248173,
+					5.824389447651036,
+				],
+				[
+					296.5046126365057,
+					-262.6079236805497,
+					6.817059951634036,
+				],
+				[
+					274.8493323432548,
+					-268.53332849891115,
+					0.49524165311442303,
+				],
+				[
+					244.70101503620327,
+					-341.0674588467016,
+					2.6303682503674324,
+				],
+				[
+					242.61991159877843,
+					-340.21688019621445,
+					-6.238333371948376,
+				],
+				[
+					238.6692414518888,
+					-341.7815373307332,
+					-2.4656272485832105,
+				],
+			];
+
+			for (let i = 0; i < positions.length; i++) {
+				const cp = animation.createControlPoint();
+
+				cp.position.set(...positions[i]);
+				cp.target.set(...targets[i]);
+			}
+
+			console.log(animation)
+
+			viewer.scene.addCameraAnimation(animation);
+
+
+		});
+
+
+		{
+			let manager = new THREE.LoadingManager();
+			manager.onProgress = function (item, loaded, total) {
+				console.log(item, loaded, total);
+			};
+
+			let onProgress = function (xhr) {
+				if (xhr.lengthComputable) {
+					let percentComplete = xhr.loaded / xhr.total * 100;
+					console.log(Math.round(percentComplete, 2) + '% downloaded');
+				}
+			};
+			let onError = function (xhr) { };
+		}
+
+
+		function loop(timestamp) {
+			requestAnimationFrame(loop);
+
+			viewer.update(viewer.clock.getDelta(), timestamp);
+
+			viewer.render();
+
+			if (window.toMap !== undefined) {
+
+				{
+					let camera = viewer.scene.getActiveCamera();
+
+					let pPos = new THREE.Vector3(0, 0, 0).applyMatrix4(camera.matrixWorld);
+					let pRight = new THREE.Vector3(600, 0, 0).applyMatrix4(camera.matrixWorld);
+					let pUp = new THREE.Vector3(0, 600, 0).applyMatrix4(camera.matrixWorld);
+					let pTarget = viewer.scene.view.getPivot();
+
+					let toCes = (pos) => {
+						let xy = [pos.x, pos.y];
+						let height = pos.z;
+						let deg = toMap.forward(xy);
+						let cPos = Cesium.Cartesian3.fromDegrees(...deg, height);
+
+						return cPos;
+					};
+
+					let cPos = toCes(pPos);
+					let cUpTarget = toCes(pUp);
+					let cTarget = toCes(pTarget);
+
+					let cDir = Cesium.Cartesian3.subtract(cTarget, cPos, new Cesium.Cartesian3());
+					let cUp = Cesium.Cartesian3.subtract(cUpTarget, cPos, new Cesium.Cartesian3());
+
+					cDir = Cesium.Cartesian3.normalize(cDir, new Cesium.Cartesian3());
+					cUp = Cesium.Cartesian3.normalize(cUp, new Cesium.Cartesian3());
+
+					cesiumViewer.camera.setView({
+						destination: cPos,
+						orientation: {
+							direction: cDir,
+							up: cUp
+						}
+					});
+
+				}
+
+				let aspect = viewer.scene.getActiveCamera().aspect;
+				if (aspect < 1) {
+					let fovy = Math.PI * (viewer.scene.getActiveCamera().fov / 180);
+					cesiumViewer.camera.frustum.fov = fovy;
+				} else {
+					let fovy = Math.PI * (viewer.scene.getActiveCamera().fov / 180);
+					let fovx = Math.atan(Math.tan(0.5 * fovy) * aspect) * 2
+					cesiumViewer.camera.frustum.fov = fovx;
+				}
+
+			}
+
+			cesiumViewer.render();
+		}
+
+		requestAnimationFrame(loop);
+
+	</script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,37 @@
+<h1 style="text-align: center;"> </h1>
+<h1 style="text-align: center;"><span style="font-size: 36pt;">Arch of Septimius Severus</span></h1>
+<p> </p>
+<div style="margin: 0 5% 5% 5%;">
+<p>The <b>Arch of Septimius Severus</b> (<a title="Italian language" href="https://en.wikipedia.org/wiki/Italian_language">Italian</a>: <i lang="it">Arco di Settimio Severo</i>) at the northwest end of the <a title="Roman Forum" href="https://en.wikipedia.org/wiki/Roman_Forum">Roman Forum</a> is a <a class="mw-redirect" title="White marble" href="https://en.wikipedia.org/wiki/White_marble">white marble</a> <a title="Triumphal arch" href="https://en.wikipedia.org/wiki/Triumphal_arch">triumphal arch</a> dedicated in 203 to commemorate the <a class="mw-redirect" title="List of ancient monuments in Rome" href="https://en.wikipedia.org/wiki/Roman-Parthian_Wars">Parthian victories</a> of Emperor <a title="Septimius Severus" href="https://en.wikipedia.org/wiki/Septimius_Severus">Septimius Severus</a> and his two sons, <a title="" href="https://en.wikipedia.org/wiki/Caracalla">Caracalla</a> and <a class="mw-redirect" title="" href="https://en.wikipedia.org/wiki/Publius_Septimius_Geta">Geta</a>, in the two campaigns against the <a title="Parthian Empire" href="https://en.wikipedia.org/wiki/Parthian_Empire">Parthians</a> of 194/195 and 197–199.</p>
+<p>After the death of Septimius Severus, his sons Caracalla and Geta were initially joint emperors. Caracalla had Geta assassinated in 212; Geta's memorials were destroyed and all images or mentions of him were removed from public buildings and monuments. Accordingly, Geta's image and inscriptions referring to him were removed from the arch.</p>
+</div>
+<div style="position: relative; margin: 5% 10% 5% 10%; height: 500px;">
+	<button type="button" onclick="full()" style="position: absolute; top: 10px; right: 10px;">full screen</button>
+	<iframe style="width: 100%; height: 100%;" src="src/septimus.html" width="100%" height="100%"></iframe>
+</div>
+<div style="margin: 0 5% 5% 5%;">
+<p>The arch was raised on a <a title="Travertine" href="https://en.wikipedia.org/wiki/Travertine">travertine</a> base originally approached by steps from the Forum's ancient level. The central archway, spanned by a richly <a title="Coffer" href="https://en.wikipedia.org/wiki/Coffer">coffered</a> semicircular <a title="" href="https://en.wikipedia.org/wiki/Vault_(architecture)">vault</a>, has lateral openings to each side archway, a feature copied in many Early Modern <a title="Publius Septimius Geta" href="https://en.wikipedia.org/wiki/Triumphal_arch">triumphal arches</a>. The Arch is about 23 meters in height, 25 meters in width. The arch bears two sets of reliefs. The first set includes four large panels on each face of the attic and the second set consists of eight panels that are set into the inner face of the four archways.<sup id="cite_ref-1" class="reference"><a href="https://en.wikipedia.org/wiki/Arch_of_Septimius_Severus#cite_note-1">[1]</a></sup></p>
+<p>The three archways rest on <a title="Pier (architecture)" href="https://en.wikipedia.org/wiki/Pier_(architecture)">piers</a>, in front of which are detached <a title="Composite order" href="https://en.wikipedia.org/wiki/Composite_order">composite columns</a> on <a title="Pedestal" href="https://en.wikipedia.org/wiki/Pedestal">pedestals</a>. Winged Victories are carved in relief in the <a title="Spandrel" href="https://en.wikipedia.org/wiki/Spandrel">spandrels</a>. A <a class="mw-redirect" title="Staircase" href="https://en.wikipedia.org/wiki/Staircase">staircase</a> in the south pier leads to the top of the monument, on which were statues of the emperor and his two sons in a four-horse chariot (<i><a title="Quadriga" href="https://en.wikipedia.org/wiki/Quadriga">quadriga</a></i>), accompanied by soldiers.</p>
+<p> </p>
+<p> </p>
+</div>
+<script>
+	function requestFullScreen(element) {
+		// Supports most browsers and their versions.
+		var requestMethod = element.requestFullScreen || element.webkitRequestFullScreen || element.mozRequestFullScreen || element.msRequestFullScreen;
+
+		if (requestMethod) { // Native full screen.
+			requestMethod.call(element);
+		} else if (typeof window.ActiveXObject !== "undefined") { // Older IE.
+			var wscript = new ActiveXObject("WScript.Shell");
+			if (wscript !== null) {
+				wscript.SendKeys("{F11}");
+			}
+		}
+	}
+
+	function full() {
+		var elem = document.body; // Make the body go full screen.
+		requestFullScreen(elem);
+	}
+</script>

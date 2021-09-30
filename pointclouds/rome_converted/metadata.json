@@ -1,0 +1,172 @@
+{
+	"version": "2.0",
+	"name": "RomanPotree",
+	"description": "",
+	"points": 328595362,
+	"projection": "+proj=somerc +lat_0=41.89285 +lon_0=12.48383 +k_0=1 +x_0=0 +y_0=0 +ellps=bessel +towgs84=674.4,15.1,405.3,0,0,0,0 +units=m +no_defs ",
+	"hierarchy": {
+		"firstChunkSize": 2640,
+		"stepSize": 4,
+		"depth": 14
+	},
+	"offset": [
+		-232.39757214355467,
+		-209.0340870361328,
+		-16.486766357421878
+	],
+	"scale": [
+		0.001,
+		0.001,
+		0.001
+	],
+	"spacing": 7.84059375,
+	"boundingBox": {
+		"min": [
+			-232.39757214355467,
+			-209.0340870361328,
+			-16.486766357421878
+		],
+		"max": [
+			771.19842785644528,
+			794.56191296386714,
+			987.10923364257815
+		]
+	},
+	"encoding": "DEFAULT",
+	"attributes": [
+		{
+			"name": "position",
+			"description": "",
+			"size": 12,
+			"numElements": 3,
+			"elementSize": 4,
+			"type": "int32",
+			"min": [
+				-232.39757214355467,
+				-167.93608703613282,
+				-16.486766357421878
+			],
+			"max": [
+				346.26042785644529,
+				794.56191296386726,
+				245.13723364257814
+			]
+		},
+		{
+			"name": "intensity",
+			"description": "",
+			"size": 2,
+			"numElements": 1,
+			"elementSize": 2,
+			"type": "uint16",
+			"min": [
+				24586
+			],
+			"max": [
+				45522
+			]
+		},
+		{
+			"name": "return number",
+			"description": "",
+			"size": 1,
+			"numElements": 1,
+			"elementSize": 1,
+			"type": "uint8",
+			"min": [
+				1
+			],
+			"max": [
+				1
+			]
+		},
+		{
+			"name": "number of returns",
+			"description": "",
+			"size": 1,
+			"numElements": 1,
+			"elementSize": 1,
+			"type": "uint8",
+			"min": [
+				1
+			],
+			"max": [
+				1
+			]
+		},
+		{
+			"name": "classification",
+			"description": "",
+			"size": 1,
+			"numElements": 1,
+			"elementSize": 1,
+			"type": "uint8",
+			"min": [
+				0
+			],
+			"max": [
+				0
+			]
+		},
+		{
+			"name": "scan angle rank",
+			"description": "",
+			"size": 1,
+			"numElements": 1,
+			"elementSize": 1,
+			"type": "uint8",
+			"min": [
+				0
+			],
+			"max": [
+				0
+			]
+		},
+		{
+			"name": "user data",
+			"description": "",
+			"size": 1,
+			"numElements": 1,
+			"elementSize": 1,
+			"type": "uint8",
+			"min": [
+				0
+			],
+			"max": [
+				0
+			]
+		},
+		{
+			"name": "point source id",
+			"description": "",
+			"size": 2,
+			"numElements": 1,
+			"elementSize": 2,
+			"type": "uint16",
+			"min": [
+				0
+			],
+			"max": [
+				0
+			]
+		},
+		{
+			"name": "rgb",
+			"description": "",
+			"size": 6,
+			"numElements": 3,
+			"elementSize": 2,
+			"type": "uint16",
+			"min": [
+				0,
+				0,
+				0
+			],
+			"max": [
+				65280,
+				65280,
+				65280
+			]
+		}
+	]
+}
